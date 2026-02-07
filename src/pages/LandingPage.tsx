@@ -27,20 +27,21 @@ export default function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <div className="relative pt-20 pb-32 px-6">
+            <div className="relative pt-2 pb-12 px-6">
                 {/* Background Blobs */}
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
-                <div className="max-w-7xl mx-auto relative z-10 text-center">
+                <div className="max-w-7xl mx-auto relative z-10 text-center flex flex-col items-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        className="flex flex-col items-center -mt-6"
                     >
-                        <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium text-teal-300 mb-8 backdrop-blur-sm">
-                            <span className="flex h-2 w-2 rounded-full bg-teal-400 animate-pulse"></span>
-                            The Future of Music Streaming is Here
+                        <div className="inline-flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-base font-medium text-teal-300 mb-4 backdrop-blur-sm text-center">
+                            <span className="flex h-2.5 w-2.5 rounded-full bg-teal-400 animate-pulse shrink-0"></span>
+                            <span>The Future of Music Streaming is Here</span>
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
@@ -54,7 +55,7 @@ export default function LandingPage() {
                                 <span className="text-white font-bold">Etao</span> created Artists First to ensure no artist ever loses their livelihood again.
                             </p>
                             <p>
-                                We built this to give you actual benefit for your art.
+                                Trust Musicians, Producers, Artists to receive the true financial benefits for their art NOW.
                             </p>
                             <p className="text-2xl text-white font-bold">
                                 Starting with 95% of music streaming revenue.
@@ -82,16 +83,16 @@ export default function LandingPage() {
             </div>
 
             {/* Comparison Section */}
-            <div className="py-24 bg-slate-900/50 relative border-t border-white/5">
+            <div className="py-12 bg-slate-900/50 relative border-t border-white/5">
                 <div className="max-w-5xl mx-auto px-6">
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-10">
                         <h2 className="text-3xl font-bold mb-4">Why we're different</h2>
                         <p className="text-slate-400">We've rebuilt the model to serve creators, not algorithms.</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Others */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                        <div className="bg-white/10 border border-white/10 rounded-2xl p-8 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
                             <div className="text-xl font-bold text-slate-300 mb-2">Streaming Giants</div>
                             <div className="text-4xl font-bold mb-1 text-slate-500">$0.003</div>
                             <div className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-wide">artists paid per stream</div>
@@ -129,7 +130,7 @@ export default function LandingPage() {
                         </motion.div>
 
                         {/* Marketplaces */}
-                        <div className="bg-white/5 border border-white/5 rounded-2xl p-8 opacity-75">
+                        <div className="bg-white/10 border border-white/10 rounded-2xl p-8 opacity-90">
                             <div className="text-xl font-bold text-slate-300 mb-2">Marketplaces</div>
                             <div className="text-4xl font-bold mb-6 text-slate-400">85% of sales</div>
                             <ul className="space-y-4 text-sm text-slate-400">
