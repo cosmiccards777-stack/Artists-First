@@ -28,7 +28,7 @@ export default function GenreSelection() {
         }
         // If already selected, skip
         if (user.favoriteGenres && user.favoriteGenres.length === 4) {
-            navigate('/dashboard');
+            navigate('/discover');
         }
     }, [user, navigate, isLoading]);
 
@@ -45,7 +45,7 @@ export default function GenreSelection() {
     const handleContinue = () => {
         if (selectedGenres.length === 4) {
             updateGenres(selectedGenres);
-            navigate('/dashboard');
+            navigate('/discover');
         }
     };
 

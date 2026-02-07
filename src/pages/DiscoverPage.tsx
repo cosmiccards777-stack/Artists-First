@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Heart, Search, TrendingUp, Music } from 'lucide-react';
+import { Play, Heart, Search, TrendingUp, PlusCircle, ListMusic } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMusic, type Track } from '../context/MusicContext';
 
@@ -25,12 +25,26 @@ export default function DiscoverPage() {
 
     // Derived Data
     const topTracks = getTopTracks(tracks, selectedGenre);
+
+    // "Made for You" logic
     const forYouTracks = user?.favoriteGenres
         ? tracks.filter(t => user.favoriteGenres.includes(t.genre)).slice(0, 10)
         : [];
 
-    // Mock Library (unused for now)
-    // const libraryTracks = tracks.slice(0, 3);
+    // "Top Trending in Genre this Month" - Just taking top 5 of current selection for demo
+    const trendingInGenre = getTopTracks(tracks, selectedGenre !== "All" ? selectedGenre : null).slice(0, 5);
+
+    // Mock Playlists
+    const [playlists] = useState([
+        { id: 1, name: "Morning Vibes", count: 12 },
+        { id: 2, name: "Workout Energy", count: 8 },
+        { id: 3, name: "Late Night Focus", count: 24 }
+    ]);
+
+    const handleAddToPlaylist = (e: React.MouseEvent, trackId: number) => {
+        e.stopPropagation();
+        alert(`Added track ${trackId} to playlist! (Demo)`);
+    };
 
     const GENRES = [
         "All", "Pop", "R&B", "Hip Hop", "Lo-Fi",
@@ -112,8 +126,19 @@ export default function DiscoverPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h3 className="font-bold text-slate-900 truncate">{track.title}</h3>
-                                            <p className="text-sm text-slate-500">{track.artist} • <span className="text-purple-600">{track.genre}</span></p>
+                                            <div className="flex justify-between items-start">
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="font-bold text-slate-900 truncate">{track.title}</h3>
+                                                    <p className="text-sm text-slate-500">{track.artist} • <span className="text-purple-600">{track.genre}</span></p>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => handleAddToPlaylist(e, track.id)}
+                                                    className="text-slate-300 hover:text-purple-600 transition-colors ml-2"
+                                                    title="Add to Playlist"
+                                                >
+                                                    <PlusCircle size={20} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -123,6 +148,41 @@ export default function DiscoverPage() {
                                     <button onClick={() => navigate('/genre-selection')} className="px-6 py-2 bg-slate-900 text-white rounded-full font-bold text-sm">Pick Your Vibe</button>
                                 </div>
                             )}
+                        </section>
+
+                        {/* Top Trending In Genre */}
+                        <section>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold text-slate-900">
+                                    Top 5 Trending <span className="text-purple-600">{selectedGenre === "All" ? "Overall" : `in ${selectedGenre}`}</span>
+                                </h2>
+                                {/* Quick Genre Filter for this section specifically if needed, but using global state is fine */}
+                            </div>
+
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                                {trendingInGenre.map((track, i) => (
+                                    <div key={track.id} className="flex items-center p-4 hover:bg-slate-50 border-b border-slate-50 last:border-none transition-colors group cursor-pointer">
+                                        <div className="w-8 font-bold text-slate-400 text-center mr-4">{i + 1}</div>
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden relative mr-4 flex-shrink-0">
+                                            <img src={track.cover} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/20 hidden group-hover:flex items-center justify-center">
+                                                <Play size={16} className="text-white fill-white" />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 min-w-0 mr-4">
+                                            <div className="font-bold text-slate-900 truncate">{track.title}</div>
+                                            <div className="text-sm text-slate-500 truncate">{track.artist}</div>
+                                        </div>
+                                        <div className="text-sm font-bold text-slate-500 mr-4 hidden sm:block">{track.monthlyPlays.toLocaleString()} plays</div>
+                                        <button
+                                            onClick={(e) => handleAddToPlaylist(e, track.id)}
+                                            className="p-2 text-slate-300 hover:text-purple-600 transition-colors"
+                                        >
+                                            <PlusCircle size={20} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </section>
 
                         <section>
@@ -180,7 +240,7 @@ export default function DiscoverPage() {
                                         <th className="hidden md:table-cell p-4 text-xs font-bold text-slate-500 uppercase">Artist</th>
                                         <th className="hidden md:table-cell p-4 text-xs font-bold text-slate-500 uppercase">Genre</th>
                                         <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Monthly Plays</th>
-                                        <th className="p-4 w-12"></th>
+                                        <th className="p-4 w-12">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -206,8 +266,9 @@ export default function DiscoverPage() {
                                             <td className="p-4 text-right font-mono text-sm text-slate-600">
                                                 {(track.monthlyPlays || 0).toLocaleString()}
                                             </td>
-                                            <td className="p-4 text-right">
+                                            <td className="p-4 text-right flex gap-2 justify-end">
                                                 <button className="text-slate-300 hover:text-pink-500 transition-colors"><Heart size={18} /></button>
+                                                <button onClick={(e) => handleAddToPlaylist(e, track.id)} className="text-slate-300 hover:text-purple-600 transition-colors"><PlusCircle size={18} /></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -222,17 +283,40 @@ export default function DiscoverPage() {
                     </motion.div>
                 )}
 
-                {/* LIBRARY TAB */}
+                {/* LIBRARY / PLAYLISTS TAB */}
                 {activeTab === 'library' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-                        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
-                            <Music size={40} />
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-bold text-slate-900">Your Library</h2>
+                            <button className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm flex items-center gap-2">
+                                <PlusCircle size={16} />
+                                New Playlist
+                            </button>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Your Library is Empty</h2>
-                        <p className="text-slate-500 mb-6 max-w-md mx-auto">Start listening and liking songs to build your collection. Downloaded tracks for offline listening will appear here.</p>
-                        <button onClick={() => setActiveTab('discover')} className="px-8 py-3 bg-brand-teal text-white rounded-xl font-bold shadow-lg shadow-teal-500/30 hover:scale-105 transition-transform">
-                            Find Music
-                        </button>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                            {/* Playlist Cards */}
+                            {playlists.map(playlist => (
+                                <div key={playlist.id} className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl text-white shadow-lg hover:scale-[1.02] transition-transform cursor-pointer group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                                    <div className="relative z-10">
+                                        <ListMusic size={32} className="mb-4 text-teal-400" />
+                                        <h3 className="text-xl font-bold mb-1">{playlist.name}</h3>
+                                        <p className="text-slate-400 text-sm">{playlist.count} tracks</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <h3 className="text-xl font-bold text-slate-900 mb-6">Liked Songs</h3>
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            {/* Mock Liked Songs */}
+                            <div className="p-12 text-center text-slate-400">
+                                <Heart size={48} className="mx-auto mb-4 text-slate-200" />
+                                <p>You haven't liked any songs yet.</p>
+                                <button onClick={() => setActiveTab('discover')} className="mt-4 text-brand-teal font-bold hover:underline">Discover Music</button>
+                            </div>
+                        </div>
                     </motion.div>
                 )}
 
