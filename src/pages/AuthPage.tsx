@@ -16,7 +16,7 @@ export default function AuthPage() {
     const [role, setRole] = useState<'listener' | 'artist' | null>(null);
     const [email, setEmail] = useState('');
     const [artistName, setArtistName] = useState('');
-    const { login, isLoading } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 

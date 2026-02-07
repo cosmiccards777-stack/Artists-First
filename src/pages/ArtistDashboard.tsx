@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMusic } from '../context/MusicContext';
 import {
-    Play, Pause, SkipBack, SkipForward, Volume2, Search, Home, Library,
-    TrendingUp, Heart, MoreHorizontal, LogOut, Edit2, Trash2, Upload,
-    X, Music, DollarSign, PlayCircle, Users, Bell, Plus, Info, AlertCircle
+    TrendingUp, LogOut, Edit2, Trash2, Upload,
+    X, Music, DollarSign, PlayCircle, Users, Plus, Info, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -167,47 +166,31 @@ export default function ArtistDashboard() {
         let audioUrl: string | undefined;
         let coverUrl: string | undefined;
 
+        if (audioFile) {
+            audioUrl = URL.createObjectURL(audioFile);
+        }
+        if (coverFile) {
+            coverUrl = await fileToBase64(coverFile);
+        }
+
         if (editId) {
-            // Update Existing Track
             const updates: any = {
                 title: uploadTitle,
                 price: parseFloat(uploadPrice),
             };
-
-            if (audioFile) {
-                // Use Blob URL for audio to avoid LocalStorage limits (Session only)
-                audioUrl = URL.createObjectURL(audioFile);
-            }
-            if (coverFile) {
-                // Keep Base64 for images so they persist (usually <5MB)
-                coverUrl = await fileToBase64(coverFile);
-            }
-
-            if (editId) {
-                // Update Existing Track
-                const updates: any = {
+            if (audioUrl) updates.file = audioUrl;
+            if (coverUrl) updates.cover = coverUrl;
+            updateTrack(editId, updates);
+        } else {
+            const finalCoverUrl = coverUrl || "/profile_final.jpg";
+            if (audioUrl) {
+                addTrack({
                     title: uploadTitle,
+                    artist: user?.name || "Unknown Artist",
                     price: parseFloat(uploadPrice),
-                };
-
-                if (audioUrl) updates.file = audioUrl;
-                if (coverUrl) updates.cover = coverUrl;
-
-                updateTrack(editId, updates);
-            } else {
-                // Create New Track
-                // Fallback for cover if not provided
-                const finalCoverUrl = coverUrl || "/profile_final.jpg";
-
-                if (audioUrl) {
-                    addTrack({
-                        title: uploadTitle,
-                        artist: user?.name || "Unknown Artist",
-                        price: parseFloat(uploadPrice),
-                        cover: finalCoverUrl,
-                        file: audioUrl
-                    });
-                }
+                    cover: finalCoverUrl,
+                    file: audioUrl
+                });
             }
         }
 
@@ -238,7 +221,7 @@ export default function ArtistDashboard() {
 
     const displayRevenue = selectedTrack ? selectedTrack.revenue : totalRevenue;
     const displayPlays = selectedTrack ? selectedTrack.plays : totalPlays;
-    const displayTitle = selectedTrack ? selectedTrack.title : "All Tracks";
+
 
     const revenueData = generateChartData(timeframe, displayRevenue);
     const playsData = generateChartData(timeframe, displayPlays);
@@ -425,7 +408,7 @@ export default function ArtistDashboard() {
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                                        formatter={(value: number) => [`${(value * 100).toLocaleString()} AF`, 'Revenue']}
+                                        formatter={(value: any) => [`${(value * 100).toLocaleString()} AF`, 'Revenue']}
                                     />
                                     <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                                 </AreaChart>
