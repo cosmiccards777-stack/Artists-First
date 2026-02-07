@@ -51,7 +51,13 @@ export default function AuthPage() {
             }
         } catch (error: any) {
             console.error("Auth failed:", error);
-            setErrorMsg(error.message || "Authentication failed. Please check your credentials.");
+            let msg = error.message;
+            if (error.code === 'auth/email-already-in-use') msg = "That email is already registered.";
+            if (error.code === 'auth/wrong-password') msg = "Incorrect password.";
+            if (error.code === 'auth/user-not-found') msg = "No account found with that email.";
+            if (error.code === 'auth/operation-not-allowed') msg = "Login method not enabled. Falling back to Dev Mode..."; // Should be handled by context now, but just in case
+
+            setErrorMsg(msg || "Authentication failed.");
         } finally {
             setLoading(false);
         }
