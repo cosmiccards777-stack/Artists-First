@@ -16,19 +16,26 @@ export default function AuthPage() {
     const [role, setRole] = useState<'listener' | 'artist' | null>(null);
     const [email, setEmail] = useState('');
     const [artistName, setArtistName] = useState('');
-    const { login, loginWithGoogle } = useAuth();
+    const [errorMsg, setErrorMsg] = useState('');
+    const { login, signup, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setErrorMsg('');
+
+        if (password.length < 5) {
+            setErrorMsg("Password must be at least 5 characters.");
+            setLoading(false);
+            return;
+        }
 
         try {
             if (view === 'login_form') {
-                // Login Flow (Mock)
-                const loginRole = 'listener';
-                await login(email, loginRole);
+                // Login Flow
+                await login(email, password);
 
                 if (email.toLowerCase() === 'cosmiccards777@gmail.com') {
                     navigate('/dashboard');
@@ -37,13 +44,14 @@ export default function AuthPage() {
                 }
 
             } else {
-                // Signup Flow (Mock)
+                // Signup Flow
                 if (!role || !email) return;
-                await login(email, role, artistName);
+                await signup(email, password, role, artistName);
                 navigate(role === 'artist' ? '/dashboard' : '/genre-selection');
             }
-        } catch (error) {
-            console.error("Login failed:", error);
+        } catch (error: any) {
+            console.error("Auth failed:", error);
+            setErrorMsg(error.message || "Authentication failed. Please check your credentials.");
         } finally {
             setLoading(false);
         }
@@ -158,6 +166,11 @@ export default function AuthPage() {
                             <p className="text-slate-500 mb-8">Enter your details to continue.</p>
 
                             <form onSubmit={handleLogin} className="space-y-4">
+                                {errorMsg && (
+                                    <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100">
+                                        {errorMsg}
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                                     <input

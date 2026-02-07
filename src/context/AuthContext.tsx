@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { auth, googleProvider } from '../firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import {
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+    type User as FirebaseUser
+} from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -19,7 +27,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (email: string, role?: UserRole, customName?: string) => Promise<void>;
+    login: (email: string, password?: string) => Promise<void>;
+    signup: (email: string, password: string, role: UserRole, name: string) => Promise<void>;
     loginWithGoogle: () => Promise<void>;
     logout: () => void;
     isLoading: boolean;
@@ -101,49 +110,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Manual Signup/Login
-    const login = async (email: string, role: UserRole = 'listener', customName?: string) => {
+    // Signup (Real Firebase)
+    const signup = async (email: string, password: string, role: UserRole, name: string) => {
         setIsLoading(true);
+        try {
+            // Create Auth User
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
 
-        // Note: In a real app, you'd use createUserWithEmailAndPassword / signInWithEmailAndPassword here.
-        // Since we are "mocking" the auth part but want DB persistence, we'll use a "fake" auth ID for now
-        // OR we should switch to real Firebase Auth. 
-        // Given the request "make a database to store log in info", we should probably use real Auth.
-        // However, switching to real password auth requires enabling it in Firebase Console.
-        // I will assume for now we stuck to the "Mock" auth for email/pass but store the result in Firestore.
+            // Update Profile Name
+            await updateProfile(firebaseUser, { displayName: name });
 
-        // MOCK AUTH + FIRESTORE STORAGE
-        // We'll generate a consistent ID based on email to simulate "logging back in"
-        const fakeUid = btoa(email); // Simple base64 of email as ID
-
-        const userRef = doc(db, "users", fakeUid);
-        const userSnap = await getDoc(userRef);
-
-        let newUser: User;
-
-        if (userSnap.exists()) {
-            // Login: Load data
-            newUser = userSnap.data() as User;
-        } else {
-            // Signup: Create data
-            newUser = {
-                id: fakeUid,
-                email,
-                name: customName || email.split('@')[0],
-                role,
+            // Create Firestore Doc
+            const newUser: User = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email || email,
+                name: name,
+                role: role,
                 avatar: role === 'artist' ? '/profile_final.jpg' : `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-                walletBalance: 5.00, // Bonus for new mock users
+                walletBalance: 5.00, // Bonus for new users
                 favoriteGenres: []
             };
+
+            const userRef = doc(db, "users", firebaseUser.uid);
             await setDoc(userRef, newUser);
+
+            setUser(newUser);
+
+        } catch (error) {
+            console.error("Signup failed:", error);
+            throw error;
+        } finally {
+            setIsLoading(false);
         }
+    };
 
-        setUser(newUser);
-
-        // We also set a local key so we remember to "auto-login" this fake user on reload
-        localStorage.setItem('etao_last_user_id', fakeUid);
-
-        setIsLoading(false);
+    // Login (Real Firebase)
+    const login = async (email: string, password?: string) => {
+        setIsLoading(true);
+        try {
+            if (password) {
+                // Real Auth
+                await signInWithEmailAndPassword(auth, email, password);
+                // State update handled by onAuthStateChanged
+            } else {
+                console.warn("Attempting legacy login without password - this is deprecated.");
+            }
+        } catch (error) {
+            console.error("Login failed:", error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Auto-login for mock users
@@ -190,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, isLoading, updateWallet, updateGenres }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, loginWithGoogle, logout, isLoading, updateWallet, updateGenres }}>
             {children}
         </AuthContext.Provider>
     );
