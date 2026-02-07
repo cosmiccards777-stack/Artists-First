@@ -16,7 +16,7 @@ export default function AuthPage() {
     const [role, setRole] = useState<'listener' | 'artist' | null>(null);
     const [email, setEmail] = useState('');
     const [artistName, setArtistName] = useState('');
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
@@ -26,29 +26,36 @@ export default function AuthPage() {
 
         try {
             if (view === 'login_form') {
-                // Login Flow
-                // For demo: Default to 'listener' unless it's the hardcoded artist
-                // Logic is handled in AuthContext for CosmicCards777
+                // Login Flow (Mock)
                 const loginRole = 'listener';
-                await login(email, loginRole); // AuthContext will override role if email matches special artist
+                await login(email, loginRole);
 
-                // Determine redirect (Role might have changed inside login)
-                // We need to check the user object, but we don't have it explicitly returned here easily without await updates
-                // For now, simpler check:
                 if (email.toLowerCase() === 'cosmiccards777@gmail.com') {
                     navigate('/dashboard');
                 } else {
-                    navigate('/'); // Default listeners to home
+                    navigate('/');
                 }
 
             } else {
-                // Signup Flow
+                // Signup Flow (Mock)
                 if (!role || !email) return;
                 await login(email, role, artistName);
                 navigate(role === 'artist' ? '/dashboard' : '/');
             }
         } catch (error) {
             console.error("Login failed:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        try {
+            await loginWithGoogle();
+            navigate('/dashboard'); // Route based on user state ideally, but dashboard/home split is fine
+        } catch (error) {
+            console.error("Google Login failed:", error);
         } finally {
             setLoading(false);
         }
@@ -101,10 +108,10 @@ export default function AuthPage() {
                                         <Headphones size={24} />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-slate-900">I'm a Listener</div>
-                                        <div className="text-sm text-slate-500">I want to discover and buy music</div>
+                                        <div className="font-bold text-slate-900 text-lg">I'm a Listener</div>
+                                        <div className="text-slate-500 text-sm">Discover high-vibe music</div>
                                     </div>
-                                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-teal-600" />
+                                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-teal-500 transition-colors" />
                                 </button>
 
                                 <button
@@ -115,149 +122,117 @@ export default function AuthPage() {
                                         <Music size={24} />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-slate-900">I'm an Artist</div>
-                                        <div className="text-sm text-slate-500">I want to upload my tracks</div>
+                                        <div className="font-bold text-slate-900 text-lg">I'm an Artist</div>
+                                        <div className="text-slate-500 text-sm">Upload and earn 95%</div>
                                     </div>
-                                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-purple-600" />
+                                    <ArrowRight className="ml-auto text-slate-300 group-hover:text-purple-500 transition-colors" />
                                 </button>
                             </div>
 
-                            <div className="text-center">
-                                <p className="text-slate-500 text-sm">
-                                    Already have an account?
-                                </p>
+                            <div className="text-center pt-6 border-t border-slate-100">
                                 <button
                                     onClick={() => setView('login_form')}
-                                    className="mt-2 px-6 py-2 rounded-full border border-slate-200 text-teal-600 font-bold hover:bg-teal-50 hover:border-teal-200 transition-colors"
+                                    className="text-slate-500 hover:text-slate-900 font-medium"
                                 >
-                                    Log In to Existing Account
+                                    Already have an account? Log in
                                 </button>
                             </div>
                         </>
                     )}
 
-                    {view === 'signup_form' && (
-                        <motion.form
+                    {(view === 'signup_form' || view === 'login_form') && (
+                        <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            onSubmit={handleLogin}
                         >
                             <button
-                                type="button"
-                                onClick={() => { setView('role_selection'); setRole(null); }}
-                                className="text-sm text-slate-400 hover:text-slate-600 mb-6 flex items-center gap-1"
-                            >
-                                ← Back
-                            </button>
-
-                            <h2 className="text-3xl font-bold text-slate-900 mb-2">Create Account</h2>
-                            <p className="text-slate-500 mb-8">Sign up as a <span className="font-bold capitalize text-teal-600">{role}</span></p>
-
-                            <div className="space-y-4 mb-8">
-                                <input
-                                    type="email"
-                                    required
-                                    placeholder="Enter your email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                                />
-                                <input
-                                    type="password"
-                                    required
-                                    placeholder="Create a password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                                />
-                                {role === 'artist' && (
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Artist Name (Public)"
-                                        value={artistName}
-                                        onChange={(e) => setArtistName(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                                    />
-                                )}
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20"
-                            >
-                                {loading ? 'Creating Account...' : 'Get Started'}
-                            </button>
-                        </motion.form>
-                    )}
-
-                    {view === 'login_form' && (
-                        <motion.form
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            onSubmit={handleLogin}
-                        >
-                            <button
-                                type="button"
                                 onClick={() => setView('role_selection')}
-                                className="text-sm text-slate-400 hover:text-slate-600 mb-6 flex items-center gap-1"
+                                className="text-slate-400 hover:text-slate-600 mb-6 flex items-center gap-2 text-sm font-medium"
                             >
                                 ← Back
                             </button>
 
-                            <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h2>
-                            <p className="text-slate-500 mb-8">Please enter your details.</p>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                                {view === 'login_form' ? 'Welcome back' : `Join as ${role === 'artist' ? 'an Artist' : 'a Listener'}`}
+                            </h2>
+                            <p className="text-slate-500 mb-8">Enter your details to continue.</p>
 
-                            <button type="button" className="w-full mb-6 py-3 px-4 border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors">
-                                <Chrome size={20} /> Continue with Google
-                            </button>
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                                <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400">Or continue with email</span></div>
-                            </div>
-
-                            <div className="space-y-4 mb-8">
+                            <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                                     <input
                                         type="email"
                                         required
-                                        placeholder="Enter your email"
+                                        className="w-full p-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
+                                        placeholder="name@example.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                                     />
                                 </div>
+
+                                {view === 'signup_form' && role === 'artist' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Artist Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full p-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
+                                            placeholder="Stage Name"
+                                            value={artistName}
+                                            onChange={(e) => setArtistName(e.target.value)}
+                                        />
+                                    </div>
+                                )}
+
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Password</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                                     <input
                                         type="password"
                                         required
+                                        className="w-full p-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                                     />
                                 </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50"
+                                >
+                                    {loading ? 'Processing...' : (view === 'login_form' ? 'Log In' : 'Create Account')}
+                                </button>
+                            </form>
+
+                            <div className="my-6 flex items-center gap-4">
+                                <div className="h-px bg-slate-200 flex-1"></div>
+                                <span className="text-slate-400 text-sm">or</span>
+                                <div className="h-px bg-slate-200 flex-1"></div>
                             </div>
 
                             <button
-                                type="submit"
+                                type="button"
+                                onClick={handleGoogleLogin}
                                 disabled={loading}
-                                className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20"
+                                className="w-full py-3 px-6 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Logging in...' : 'Log In'}
+                                <Chrome size={18} />
+                                Continue with Google
                             </button>
-                            <div className="text-center mt-6">
-                                <p className="text-slate-500 text-sm">
+
+                            {view === 'login_form' && (
+                                <p className="text-center mt-6 text-sm text-slate-500">
                                     Don't have an account?{' '}
-                                    <button type="button" onClick={() => setView('role_selection')} className="text-teal-600 font-bold hover:underline">
-                                        Sign Up
+                                    <button
+                                        onClick={() => setView('role_selection')}
+                                        className="text-teal-600 font-bold hover:underline"
+                                    >
+                                        Sign up
                                     </button>
                                 </p>
-                            </div>
-                        </motion.form>
+                            )}
+                        </motion.div>
                     )}
                 </div>
             </motion.div>

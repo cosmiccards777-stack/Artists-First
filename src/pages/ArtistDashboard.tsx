@@ -92,10 +92,10 @@ export default function ArtistDashboard() {
 
     // Limits
     // Session-only limits (Blob URLs)
-    const MAX_AUDIO_SIZE = 250 * 1024 * 1024; // 250MB
+    const MAX_AUDIO_SIZE = 80 * 1024 * 1024; // 80MB
 
-    // LocalStorage limits (Base64) - MUST be very small for demo
-    const MAX_IMAGE_SIZE = 300 * 1024; // 300KB (LocalStorage is limited)
+    // LocalStorage limits (Base64) - Caution: Large images may exceed storage quota
+    const MAX_IMAGE_SIZE = 12 * 1024 * 1024; // 12MB
 
     const handleLogout = () => {
         logout();
@@ -106,7 +106,7 @@ export default function ArtistDashboard() {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > MAX_AUDIO_SIZE) {
-                setError("Audio file exceeds 250MB limit.");
+                setError("Audio file exceeds 80MB limit.");
                 return;
             }
             setError(null);
@@ -118,7 +118,7 @@ export default function ArtistDashboard() {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > MAX_IMAGE_SIZE) {
-                setError("Image file exceeds 300KB limit (Demo Storage). Please use a smaller image.");
+                setError("Image file exceeds 12MB limit.");
                 return;
             }
             setError(null);
@@ -314,8 +314,11 @@ export default function ArtistDashboard() {
                                 <div className="text-slate-500 font-medium text-sm">
                                     Available Balance
                                 </div>
-                                <div className="text-3xl font-bold text-slate-900">{balanceAF.toLocaleString()} AF</div>
-                                <div className="text-xs text-slate-400 mt-1">Lifetime: {(displayRevenue * 100).toLocaleString()} AF</div>
+                                <div className="text-3xl font-bold text-slate-900 flex items-baseline gap-2">
+                                    {balanceAF.toLocaleString()} AF
+                                    <span className="text-lg text-slate-400 font-normal">(${availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                                </div>
+                                <div className="text-xs text-slate-400 mt-1">Lifetime: {(displayRevenue * 100).toLocaleString()} AF (${displayRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</div>
                             </div>
                             <div className="bg-green-100 text-green-600 p-3 rounded-xl"><DollarSign size={24} /></div>
                         </div>
@@ -408,7 +411,7 @@ export default function ArtistDashboard() {
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                                        formatter={(value: any) => [`${(value * 100).toLocaleString()} AF`, 'Revenue']}
+                                        formatter={(value: any) => [`${(value * 100).toLocaleString()} AF ($${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`, 'Revenue']}
                                     />
                                     <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                                 </AreaChart>
@@ -494,7 +497,7 @@ export default function ArtistDashboard() {
                                         </td>
                                         <td className="p-4 font-bold text-slate-900">
                                             {track.title}
-                                            <div className="md:hidden text-xs text-slate-500 font-normal">{(track.revenue * 100).toFixed(0)} AF • {track.status}</div>
+                                            <div className="md:hidden text-xs text-slate-500 font-normal">{(track.revenue * 100).toFixed(0)} AF (${track.revenue.toFixed(2)}) • {track.status}</div>
                                         </td>
                                         <td className="hidden md:table-cell p-4">
                                             <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
@@ -502,7 +505,10 @@ export default function ArtistDashboard() {
                                             </span>
                                         </td>
                                         <td className="p-4 text-slate-600">{track.plays.toLocaleString()}</td>
-                                        <td className="hidden md:table-cell p-4 text-slate-600">{(track.revenue * 100).toLocaleString()} AF</td>
+                                        <td className="hidden md:table-cell p-4 text-slate-600">
+                                            {(track.revenue * 100).toLocaleString()} AF
+                                            <span className="text-xs text-slate-400 ml-1">(${track.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                                        </td>
                                         <td className="p-4 text-right space-x-2">
                                             {/* Edit Button */}
                                             <button

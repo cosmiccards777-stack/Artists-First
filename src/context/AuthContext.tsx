@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { auth, googleProvider } from '../firebase';
+import { signInWithPopup, signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
 type UserRole = 'listener' | 'artist';
 
@@ -14,7 +16,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (email: string, role: UserRole, customName?: string) => Promise<void>;
+    login: (email: string, role?: UserRole, customName?: string) => Promise<void>;
+    loginWithGoogle: () => Promise<void>;
     logout: () => void;
     isLoading: boolean;
     updateWallet: (amount: number) => void;
@@ -26,16 +29,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Mock persistence
+    // Watch Auth State & Persistence
     useEffect(() => {
-        const stored = localStorage.getItem('etao_user');
-        if (stored) {
-            setUser(JSON.parse(stored));
-        }
-        setIsLoading(false);
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+            if (firebaseUser) {
+                // FIREBASE USER
+                // Determine Role Logic (Still mocked for now, everyone starts as listener unless forced)
+                // In production, you'd check a database here.
+                let role: UserRole = 'listener';
+
+                // Hardcoded Artist Check for Demo
+                if (firebaseUser.email?.toLowerCase() === 'cosmiccards777@gmail.com') {
+                    role = 'artist';
+                }
+
+                const newUser: User = {
+                    id: firebaseUser.uid,
+                    email: firebaseUser.email || '',
+                    name: firebaseUser.displayName || 'User',
+                    role, // Dynamically set role
+                    avatar: firebaseUser.photoURL || undefined,
+                    walletBalance: 5.00 // Default credit still applies for demo logic
+                };
+
+                // Restore wallet from local storage if exists
+                const storedUser = localStorage.getItem(`etao_user_${firebaseUser.email}`);
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    if (parsed.walletBalance) newUser.walletBalance = parsed.walletBalance;
+                }
+
+                setUser(newUser);
+            } else {
+                // NO FIREBASE USER - CHECK MOCK STORAGE
+                const stored = localStorage.getItem('etao_user');
+                if (stored) {
+                    setUser(JSON.parse(stored));
+                } else {
+                    setUser(null);
+                }
+            }
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
     }, []);
 
-    const login = async (email: string, role: UserRole, customName?: string) => {
+    // Google Login
+    const loginWithGoogle = async () => {
+        setIsLoading(true);
+        try {
+            await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            console.error("Google Login failed:", error);
+            setIsLoading(false);
+        }
+    };
+
+    // Mock Login (Legacy)
+    const login = async (email: string, role: UserRole = 'listener', customName?: string) => {
         setIsLoading(true);
         // Mock API delay
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -46,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Hardcoded Artist for Demo
         if (email.toLowerCase() === 'cosmiccards777@gmail.com') {
             name = "Etao";
-            role = 'artist'; // Force artist role
+            role = 'artist';
             avatar = "/profile_final.jpg";
         }
 
@@ -56,12 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name,
             role,
             avatar,
-            walletBalance: 5.00 // Default $5.00 credit for demo
+            walletBalance: 5.00
         };
 
         setUser(newUser);
-        localStorage.setItem('etao_user', JSON.stringify(newUser));
-        setIsLoading(false);
         localStorage.setItem('etao_user', JSON.stringify(newUser));
         setIsLoading(false);
     };
@@ -70,18 +120,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) return;
         const updatedUser = { ...user, walletBalance: user.walletBalance + amount };
         setUser(updatedUser);
-        localStorage.setItem('etao_user', JSON.stringify(updatedUser)); // Persist balance
+
+        // Persist based on auth type
+        if (user.id.startsWith('mock-')) {
+            localStorage.setItem('etao_user', JSON.stringify(updatedUser));
+        } else {
+            localStorage.setItem(`etao_user_${user.email}`, JSON.stringify(updatedUser));
+        }
     };
 
-
-
     const logout = () => {
+        signOut(auth); // Sign out of Firebase
         setUser(null);
-        localStorage.removeItem('etao_user');
+        localStorage.removeItem('etao_user'); // Clear mock storage
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, isLoading, updateWallet }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, isLoading, updateWallet }}>
             {children}
         </AuthContext.Provider>
     );
