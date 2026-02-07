@@ -12,15 +12,16 @@ const GENRES = [
     "Drum & Bass", "Dubstep", "Trance", "Disco",
     "Funk", "Blues", "Country", "Folk",
     "Latin", "Metal", "Punk", "Gospel",
-    "Soundtrack", "World", "Trap", "Synthwave"
+    "Afrobeat", "World", "Trap", "Synthwave"
 ];
 
 export default function GenreSelection() {
-    const { user, updateGenres } = useAuth();
+    const { user, updateGenres, isLoading } = useAuth();
     const navigate = useNavigate();
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
     useEffect(() => {
+        if (isLoading) return; // Wait for auth to load
         if (!user) {
             navigate('/auth');
             return;
@@ -29,7 +30,7 @@ export default function GenreSelection() {
         if (user.favoriteGenres && user.favoriteGenres.length === 4) {
             navigate('/dashboard');
         }
-    }, [user, navigate]);
+    }, [user, navigate, isLoading]);
 
     const toggleGenre = (genre: string) => {
         if (selectedGenres.includes(genre)) {

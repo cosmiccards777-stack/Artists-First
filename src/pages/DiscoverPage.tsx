@@ -40,7 +40,7 @@ export default function DiscoverPage() {
         "Drum & Bass", "Dubstep", "Trance", "Disco",
         "Funk", "Blues", "Country", "Folk",
         "Latin", "Metal", "Punk", "Gospel",
-        "Soundtrack", "World", "Trap", "Synthwave"
+        "Afrobeat", "World", "Trap", "Synthwave"
     ];
 
     return (
