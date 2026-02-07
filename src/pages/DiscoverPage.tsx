@@ -7,16 +7,16 @@ import { useMusic, type Track } from '../context/MusicContext';
 
 // Helper to get top tracks
 const getTopTracks = (tracks: Track[], genre: string | null = null) => {
-    let filtered = tracks;
+    let filtered = [...tracks];
     if (genre && genre !== "All") {
-        filtered = tracks.filter(t => t.genre === genre);
+        filtered = filtered.filter(t => t.genre === genre);
     }
     // Sort by monthly plays
     return filtered.sort((a, b) => (b.monthlyPlays || 0) - (a.monthlyPlays || 0)).slice(0, 100);
 };
 
 export default function DiscoverPage() {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const { tracks } = useMusic();
     const navigate = useNavigate();
 
@@ -24,6 +24,10 @@ export default function DiscoverPage() {
     const [activeTab, setActiveTab] = useState<'discover' | 'charts' | 'library'>('discover');
 
     console.log("DiscoverPage Render", { user, tracksLength: tracks?.length, activeTab });
+
+    if (authLoading) {
+        return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-10 text-slate-500">Loading your experience...</div>;
+    }
 
     if (!tracks) {
         console.error("Tracks is undefined");
@@ -117,7 +121,7 @@ export default function DiscoverPage() {
 
                 {/* DISCOVER TAB */}
                 {activeTab === 'discover' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+                    <motion.div className="space-y-10">
                         {/* Hero / Recommendation */}
                         <section>
                             <h2 className="text-2xl font-bold text-slate-900 mb-6">Made For You</h2>
@@ -214,7 +218,7 @@ export default function DiscoverPage() {
 
                 {/* CHARTS TAB */}
                 {activeTab === 'charts' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <motion.div>
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                             <div>
                                 <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
@@ -292,7 +296,7 @@ export default function DiscoverPage() {
 
                 {/* LIBRARY / PLAYLISTS TAB */}
                 {activeTab === 'library' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <motion.div>
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-bold text-slate-900">Your Library</h2>
                             <button className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm flex items-center gap-2">
