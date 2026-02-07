@@ -24,14 +24,41 @@ export default function ArtistProfile() {
     const [showTipModal, setShowTipModal] = useState(false);
     const [tipAmount, setTipAmount] = useState(100); // 100 AF = $1.00
 
+    // Audio State
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
     const audioRef = useRef(new Audio());
 
     useEffect(() => {
         const audio = audioRef.current;
         const handleEnded = () => setIsPlaying(false);
+        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleLoadedMetadata = () => setDuration(audio.duration);
+
         audio.addEventListener('ended', handleEnded);
-        return () => audio.removeEventListener('ended', handleEnded);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+        return () => {
+            audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        };
     }, []);
+
+    const formatTime = (time: number) => {
+        if (isNaN(time)) return "0:00";
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const time = Number(e.target.value);
+        audioRef.current.currentTime = time;
+        setCurrentTime(time);
+    };
 
     const playTrack = (track: typeof tracks[0]) => {
         if (!user) {
@@ -217,6 +244,19 @@ export default function ArtistProfile() {
                             <div className="text-xs text-slate-500">{currentTrack.artist}</div>
                         </div>
                     </div>
+                    <div className="flex-1 max-w-xl mx-4 flex items-center gap-3">
+                        <span className="text-xs text-slate-400 font-mono w-10 text-right">{formatTime(currentTime)}</span>
+                        <input
+                            type="range"
+                            min="0"
+                            max={duration || 100}
+                            value={currentTime}
+                            onChange={handleSeek}
+                            className="flex-1 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand-teal"
+                        />
+                        <span className="text-xs text-slate-400 font-mono w-10">{formatTime(duration)}</span>
+                    </div>
+
                     <div className="flex items-center gap-6">
                         <button className="w-12 h-12 bg-brand-teal rounded-full flex items-center justify-center text-white shadow-lg shadow-teal-500/30 hover:scale-105 transition-transform" onClick={() => playTrack(currentTrack)}>
                             {isPlaying ? <Pause size={24} className="fill-white ml-0.5" /> : <Play size={24} className="fill-white ml-0.5" />}
