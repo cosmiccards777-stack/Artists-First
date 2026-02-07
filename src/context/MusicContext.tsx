@@ -10,6 +10,7 @@ export interface Track {
     plays: number;
     revenue: number;
     status: 'Active' | 'Draft';
+    lyrics?: string;
 }
 
 interface MusicContextType {

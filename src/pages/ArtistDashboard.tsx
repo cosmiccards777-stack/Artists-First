@@ -84,6 +84,7 @@ export default function ArtistDashboard() {
     const [uploadPrice, setUploadPrice] = useState("2.22");
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [uploadLyrics, setUploadLyrics] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -132,6 +133,7 @@ export default function ArtistDashboard() {
         setUploadPrice("2.22");
         setAudioFile(null);
         setCoverFile(null);
+        setUploadLyrics("");
         setError(null);
         setIsUploadOpen(true);
     };
@@ -141,6 +143,7 @@ export default function ArtistDashboard() {
         setEditId(track.id);
         setUploadTitle(track.title);
         setUploadPrice(track.price.toString());
+        setUploadLyrics(track.lyrics || "");
         setAudioFile(null); // Reset files, only update if user picks new ones
         setCoverFile(null);
         setError(null);
@@ -177,6 +180,7 @@ export default function ArtistDashboard() {
             const updates: any = {
                 title: uploadTitle,
                 price: parseFloat(uploadPrice),
+                lyrics: uploadLyrics,
             };
             if (audioUrl) updates.file = audioUrl;
             if (coverUrl) updates.cover = coverUrl;
@@ -189,7 +193,8 @@ export default function ArtistDashboard() {
                     artist: user?.name || "Unknown Artist",
                     price: parseFloat(uploadPrice),
                     cover: finalCoverUrl,
-                    file: audioUrl
+                    file: audioUrl,
+                    lyrics: uploadLyrics
                 });
             }
         }
@@ -646,6 +651,19 @@ export default function ArtistDashboard() {
                                         type="number" step="0.01" required
                                         value={uploadPrice} onChange={e => setUploadPrice(e.target.value)}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">
+                                        Lyrics (Time-Synced)
+                                        <span className="text-xs font-normal text-slate-400 ml-2">Format: [mm:ss] Line text</span>
+                                    </label>
+                                    <textarea
+                                        value={uploadLyrics}
+                                        onChange={e => setUploadLyrics(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 font-mono text-sm h-32"
+                                        placeholder="[00:12] Hello world&#10;[00:15] This is a song"
                                     />
                                 </div>
 

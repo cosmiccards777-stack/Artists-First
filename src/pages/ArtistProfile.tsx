@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Star, DollarSign } from 'lucide-react';
+import { Play, Pause, Star, DollarSign, Mic, X, AlignLeft } from 'lucide-react';
+import clsx from 'clsx';
 
 import { useAuth } from '../context/AuthContext';
 import { useMusic } from '../context/MusicContext';
@@ -28,7 +29,33 @@ export default function ArtistProfile() {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
 
+    // Lyrics State
+    const [showLyrics, setShowLyrics] = useState(false);
+    const [lyricLines, setLyricLines] = useState<{ time: number; text: string }[]>([]);
+
     const audioRef = useRef(new Audio());
+
+    useEffect(() => {
+        if (currentTrack?.lyrics) {
+            const lines = currentTrack.lyrics.split('\n')
+                .map(line => {
+                    const match = line.match(/\[(\d{2}):(\d{2})\](.*)/);
+                    if (match) {
+                        const minutes = parseInt(match[1]);
+                        const seconds = parseInt(match[2]);
+                        return {
+                            time: minutes * 60 + seconds,
+                            text: match[3].trim()
+                        };
+                    }
+                    return null;
+                })
+                .filter((l): l is { time: number; text: string } => l !== null);
+            setLyricLines(lines);
+        } else {
+            setLyricLines([]);
+        }
+    }, [currentTrack]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -234,6 +261,61 @@ export default function ArtistProfile() {
                 </div>
             </div>
 
+            {/* Synced Lyrics Overlay */}
+            <AnimatePresence>
+                {showLyrics && currentTrack && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="fixed bottom-24 right-4 z-40 bg-slate-900/95 backdrop-blur-md rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-800 flex flex-col h-[60vh]"
+                    >
+                        <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                            <div className="flex items-center gap-3">
+                                <img src={currentTrack.cover} className="w-10 h-10 rounded-lg opacity-80" />
+                                <div>
+                                    <div className="font-bold text-slate-200 text-sm">Lyrics</div>
+                                    <div className="text-xs text-slate-500">{currentTrack.title}</div>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowLyrics(false)} className="bg-slate-800 p-2 rounded-full text-slate-400 hover:text-white transition-colors">
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-4 px-2 custom-scrollbar">
+                            {lyricLines.length > 0 ? (
+                                lyricLines.map((line, i) => {
+                                    const isActive = currentTime >= line.time && currentTime < (lyricLines[i + 1]?.time || Infinity);
+                                    // Auto-scroll logic could be added here with refs
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={clsx(
+                                                "transition-all duration-300 text-center py-2 rounded-xl cursor-pointer hover:bg-white/5",
+                                                isActive ? "text-xl font-bold text-brand-teal scale-105" : "text-sm text-slate-500 font-medium opacity-60"
+                                            )}
+                                            onClick={() => {
+                                                audioRef.current.currentTime = line.time;
+                                                setCurrentTime(line.time);
+                                            }}
+                                        >
+                                            {line.text}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-3">
+                                    <AlignLeft size={48} className="opacity-20" />
+                                    <p>No synced lyrics available.</p>
+                                    <p className="text-xs">Add them in the Artist Dashboard.</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Player Bar */}
             {currentTrack && (
                 <div className="fixed bottom-0 w-full bg-white border-t border-slate-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 flex items-center gap-4 justify-between">
@@ -258,6 +340,13 @@ export default function ArtistProfile() {
                     </div>
 
                     <div className="flex items-center gap-6">
+                        <button
+                            className={`p-2 rounded-full transition-colors ${showLyrics ? 'bg-brand-teal text-white shadow-lg shadow-teal-500/30' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+                            onClick={() => setShowLyrics(!showLyrics)}
+                            title="Lyrics"
+                        >
+                            <Mic size={20} />
+                        </button>
                         <button className="w-12 h-12 bg-brand-teal rounded-full flex items-center justify-center text-white shadow-lg shadow-teal-500/30 hover:scale-105 transition-transform" onClick={() => playTrack(currentTrack)}>
                             {isPlaying ? <Pause size={24} className="fill-white ml-0.5" /> : <Play size={24} className="fill-white ml-0.5" />}
                         </button>
