@@ -23,6 +23,13 @@ export default function DiscoverPage() {
     const [selectedGenre, setSelectedGenre] = useState<string>("All");
     const [activeTab, setActiveTab] = useState<'discover' | 'charts' | 'library'>('discover');
 
+    console.log("DiscoverPage Render", { user, tracksLength: tracks?.length, activeTab });
+
+    if (!tracks) {
+        console.error("Tracks is undefined");
+        return <div>Error: Tracks not loaded.</div>;
+    }
+
     // Derived Data
     const topTracks = getTopTracks(tracks, selectedGenre);
 
