@@ -170,14 +170,14 @@ export default function AuthPage() {
                                     />
                                 </div>
 
-                                {view === 'signup_form' && role === 'artist' && (
+                                {view === 'signup_form' && (
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Artist Name</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">{role === 'artist' ? 'Artist Name' : 'Full Name'}</label>
                                         <input
                                             type="text"
                                             required
                                             className="w-full p-3 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
-                                            placeholder="Stage Name"
+                                            placeholder={role === 'artist' ? "Stage Name" : "Jane Doe"}
                                             value={artistName}
                                             onChange={(e) => setArtistName(e.target.value)}
                                         />

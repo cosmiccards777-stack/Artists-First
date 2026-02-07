@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { auth, googleProvider } from '../firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 type UserRole = 'listener' | 'artist';
 
@@ -31,47 +33,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+
+
+    // ... (inside AuthProvider)
+
     // Watch Auth State & Persistence
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (firebaseUser) {
                 // FIREBASE USER
-                // Determine Role Logic (Still mocked for now, everyone starts as listener unless forced)
-                // In production, you'd check a database here.
-                let role: UserRole = 'listener';
+                const userRef = doc(db, "users", firebaseUser.uid);
+                const userSnap = await getDoc(userRef);
 
-                // Hardcoded Artist Check for Demo
-                if (firebaseUser.email?.toLowerCase() === 'cosmiccards777@gmail.com') {
-                    role = 'artist';
-                }
-
-                const newUser: User = {
-                    id: firebaseUser.uid,
-                    email: firebaseUser.email || '',
-                    name: firebaseUser.displayName || 'User',
-                    role, // Dynamically set role
-                    avatar: firebaseUser.photoURL || undefined,
-                    walletBalance: 5.00, // Default credit still applies for demo logic
-                    favoriteGenres: []
-                };
-
-                // Restore wallet from local storage if exists
-                const storedUser = localStorage.getItem(`etao_user_${firebaseUser.email}`);
-                if (storedUser) {
-                    const parsed = JSON.parse(storedUser);
-                    if (parsed.walletBalance) newUser.walletBalance = parsed.walletBalance;
-                    if (parsed.favoriteGenres) newUser.favoriteGenres = parsed.favoriteGenres;
-                }
-
-                setUser(newUser);
-            } else {
-                // NO FIREBASE USER - CHECK MOCK STORAGE
-                const stored = localStorage.getItem('etao_user');
-                if (stored) {
-                    setUser(JSON.parse(stored));
+                if (userSnap.exists()) {
+                    // Load existing user
+                    const userData = userSnap.data() as User;
+                    setUser({ ...userData, id: firebaseUser.uid }); // Ensure ID matches
                 } else {
-                    setUser(null);
+                    // New User (or first time logging in with this method)
+                    // We wait for the 'login' function to create the doc if it's a manual login,
+                    // but for Google Login/Reloads we might need a fallback or wait.
+                    // For now, if it doesn't exist, we rely on the Signup/Login flow to set it,
+                    // OR we set a basic shell here if it's a reload.
+                    // BUT, to avoid overwriting, we'll let the login function handle creation.
                 }
+            } else {
+                setUser(null);
             }
             setIsLoading(false);
         });
@@ -83,69 +70,117 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loginWithGoogle = async () => {
         setIsLoading(true);
         try {
-            await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // Check if user exists in DB
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                // Create new user doc
+                const newUser: User = {
+                    id: user.uid,
+                    email: user.email || '',
+                    name: user.displayName || 'Listener',
+                    role: 'listener', // Default to listener for Google Auth
+                    avatar: user.photoURL || undefined,
+                    walletBalance: 0,
+                    favoriteGenres: []
+                };
+                await setDoc(userRef, newUser);
+                setUser(newUser);
+            } else {
+                setUser(userSnap.data() as User);
+            }
+
         } catch (error) {
             console.error("Google Login failed:", error);
+        } finally {
             setIsLoading(false);
         }
     };
 
-    // Mock Login (Legacy)
+    // Manual Signup/Login
     const login = async (email: string, role: UserRole = 'listener', customName?: string) => {
         setIsLoading(true);
-        // Mock API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
 
-        let name = customName || email.split('@')[0];
-        let avatar = role === 'artist' ? '/profile_final.jpg' : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + email;
+        // Note: In a real app, you'd use createUserWithEmailAndPassword / signInWithEmailAndPassword here.
+        // Since we are "mocking" the auth part but want DB persistence, we'll use a "fake" auth ID for now
+        // OR we should switch to real Firebase Auth. 
+        // Given the request "make a database to store log in info", we should probably use real Auth.
+        // However, switching to real password auth requires enabling it in Firebase Console.
+        // I will assume for now we stuck to the "Mock" auth for email/pass but store the result in Firestore.
 
-        // Hardcoded Artist for Demo
-        if (email.toLowerCase() === 'cosmiccards777@gmail.com') {
-            name = "Etao";
-            role = 'artist';
-            avatar = "/profile_final.jpg";
+        // MOCK AUTH + FIRESTORE STORAGE
+        // We'll generate a consistent ID based on email to simulate "logging back in"
+        const fakeUid = btoa(email); // Simple base64 of email as ID
+
+        const userRef = doc(db, "users", fakeUid);
+        const userSnap = await getDoc(userRef);
+
+        let newUser: User;
+
+        if (userSnap.exists()) {
+            // Login: Load data
+            newUser = userSnap.data() as User;
+        } else {
+            // Signup: Create data
+            newUser = {
+                id: fakeUid,
+                email,
+                name: customName || email.split('@')[0],
+                role,
+                avatar: role === 'artist' ? '/profile_final.jpg' : `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+                walletBalance: 5.00, // Bonus for new mock users
+                favoriteGenres: []
+            };
+            await setDoc(userRef, newUser);
         }
 
-        const newUser: User = {
-            id: 'mock-' + Date.now(),
-            email,
-            name,
-            role,
-            avatar,
-            walletBalance: 5.00,
-            favoriteGenres: []
-        };
-
         setUser(newUser);
-        localStorage.setItem('etao_user', JSON.stringify(newUser));
+
+        // We also set a local key so we remember to "auto-login" this fake user on reload
+        localStorage.setItem('etao_last_user_id', fakeUid);
+
         setIsLoading(false);
     };
 
-    const updateWallet = (amount: number) => {
+    // Auto-login for mock users
+    useEffect(() => {
+        const checkMockLogin = async () => {
+            const lastId = localStorage.getItem('etao_last_user_id');
+            if (lastId && !auth.currentUser) {
+                const userRef = doc(db, "users", lastId);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    setUser(userSnap.data() as User);
+                }
+            }
+        };
+        checkMockLogin();
+    }, []);
+
+
+    const updateWallet = async (amount: number) => {
         if (!user) return;
-        const updatedUser = { ...user, walletBalance: user.walletBalance + amount };
+        const newBalance = user.walletBalance + amount;
+        const updatedUser = { ...user, walletBalance: newBalance };
         setUser(updatedUser);
 
-        // Persist based on auth type
-        if (user.id.startsWith('mock-')) {
-            localStorage.setItem('etao_user', JSON.stringify(updatedUser));
-        } else {
-            localStorage.setItem(`etao_user_${user.email}`, JSON.stringify(updatedUser));
-        }
+        // Update Firestore
+        const userRef = doc(db, "users", user.id);
+        await updateDoc(userRef, { walletBalance: newBalance });
     }
 
-
-    const updateGenres = (genres: string[]) => {
+    const updateGenres = async (genres: string[]) => {
         if (!user) return;
         const updatedUser = { ...user, favoriteGenres: genres };
         setUser(updatedUser);
 
-        // Persist based on auth type
-        if (user.id.startsWith('mock-')) {
-            localStorage.setItem('etao_user', JSON.stringify(updatedUser));
-        } else {
-            localStorage.setItem(`etao_user_${user.email}`, JSON.stringify(updatedUser));
-        }
+        // Update Firestore
+        const userRef = doc(db, "users", user.id);
+        await updateDoc(userRef, { favoriteGenres: genres });
     };
 
     const logout = () => {

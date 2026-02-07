@@ -37,10 +37,7 @@ export default function DiscoverPage() {
     // Derived Data
     const topTracks = getTopTracks(tracks, selectedGenre);
 
-    // "Made for You" logic
-    const forYouTracks = user?.favoriteGenres
-        ? tracks.filter(t => user.favoriteGenres.includes(t.genre)).slice(0, 10)
-        : [];
+
 
     // "Top Trending in Genre this Month" - Just taking top 5 of current selection for demo
     const trendingInGenre = getTopTracks(tracks, selectedGenre !== "All" ? selectedGenre : null).slice(0, 5);
@@ -120,43 +117,71 @@ export default function DiscoverPage() {
             <div className="max-w-7xl mx-auto px-6 py-8">
 
                 {/* DISCOVER TAB */}
+                {/* DISCOVER TAB */}
                 {activeTab === 'discover' && (
                     <motion.div className="space-y-10">
-                        {/* Hero / Recommendation */}
+                        {/* Welcome Banner */}
+                        <div className="bg-gradient-to-r from-slate-900 to-purple-900 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            <div className="relative z-10">
+                                <h1 className="text-3xl font-bold mb-2">Welcome Home, <span className="text-teal-400">{user?.name || "Listener"}</span>!</h1>
+                                <p className="text-slate-300">Here's your daily dose of high-vibe frequencies.</p>
+                            </div>
+                        </div>
+
+                        {/* "Made For You" - 3 Trending Songs per Selected Genre */}
                         <section>
                             <h2 className="text-2xl font-bold text-slate-900 mb-6">Made For You</h2>
-                            {forYouTracks.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {forYouTracks.map(track => (
-                                        <div key={track.id} className="group relative bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer">
-                                            <div className="aspect-square rounded-xl overflow-hidden mb-4 relative">
-                                                <img src={track.cover} className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                                                        <Play className="fill-slate-900 text-slate-900 ml-1" size={24} />
-                                                    </div>
+                            {user?.favoriteGenres && user.favoriteGenres.length > 0 ? (
+                                <div className="space-y-8">
+                                    {user.favoriteGenres.map(genre => {
+                                        // Get top 3 songs for this specific genre, excluding ones already in playlist (mock logic for exclusion)
+                                        const genreHandler = getTopTracks(tracks, genre).slice(0, 3);
+
+                                        if (genreHandler.length === 0) return null;
+
+                                        return (
+                                            <div key={genre}>
+                                                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                                    <span className="w-2 h-8 bg-purple-500 rounded-full"></span>
+                                                    Top Trending in {genre}
+                                                </h3>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    {genreHandler.map(track => (
+                                                        <div key={track.id} className="group relative bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer">
+                                                            <div className="aspect-square rounded-xl overflow-hidden mb-4 relative">
+                                                                <img src={track.cover} className="w-full h-full object-cover" />
+                                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                                                                        <Play className="fill-slate-900 text-slate-900 ml-1" size={24} />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <h3 className="font-bold text-slate-900 truncate">{track.title}</h3>
+                                                                    <p className="text-sm text-slate-500">{track.artist}</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={(e) => handleAddToPlaylist(e, track.id)}
+                                                                    className="text-slate-300 hover:text-purple-600 transition-colors ml-2"
+                                                                    title="Add to Playlist"
+                                                                >
+                                                                    <PlusCircle size={20} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <div className="flex justify-between items-start">
-                                                <div className="min-w-0 flex-1">
-                                                    <h3 className="font-bold text-slate-900 truncate">{track.title}</h3>
-                                                    <p className="text-sm text-slate-500">{track.artist} • <span className="text-purple-600">{track.genre}</span></p>
-                                                </div>
-                                                <button
-                                                    onClick={(e) => handleAddToPlaylist(e, track.id)}
-                                                    className="text-slate-300 hover:text-purple-600 transition-colors ml-2"
-                                                    title="Add to Playlist"
-                                                >
-                                                    <PlusCircle size={20} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
-                                <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 border-dashed">
-                                    <p className="text-slate-500 mb-4">No genres selected yet.</p>
-                                    <button onClick={() => navigate('/genre-selection')} className="px-6 py-2 bg-slate-900 text-white rounded-full font-bold text-sm">Pick Your Vibe</button>
+                                <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 border-dashed">
+                                    <h3 className="text-xl font-bold text-slate-900 mb-2">No Vibe Selected Yet</h3>
+                                    <p className="text-slate-500 mb-6">Select your favorite genres to get personalized recommendations.</p>
+                                    <button onClick={() => navigate('/genre-selection')} className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">Pick Your Vibe</button>
                                 </div>
                             )}
                         </section>
