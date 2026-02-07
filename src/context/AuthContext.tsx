@@ -139,32 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         } catch (error: any) {
             console.error("Signup failed:", error);
-
-            // FALLBACK TO MOCK IF AUTH NOT ENABLED
-            if (error.code === 'auth/operation-not-allowed') {
-                console.warn("Firebase Email/Pass Auth not enabled. Falling back to Dev Mode.");
-                await login(email, password); // Use the logic in login which will handle the mock creation
-
-                // We need to update the role/name for this new "mock" user since login() might default them
-                // We can do it manually here:
-                const fakeUid = 'mock_' + btoa(email);
-                const userRef = doc(db, "users", fakeUid);
-                const newUser: User = {
-                    id: fakeUid,
-                    email,
-                    name,
-                    role,
-                    avatar: role === 'artist' ? '/profile_final.jpg' : `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-                    walletBalance: 5.00,
-                    favoriteGenres: []
-                };
-                await setDoc(userRef, newUser);
-                setUser(newUser);
-                localStorage.setItem('etao_last_user_id', fakeUid);
-                return; // Success via fallback
-            }
-
-            throw error;
+            throw error; // Strict error throwing for production
         } finally {
             setIsLoading(false);
         }
@@ -179,55 +154,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await signInWithEmailAndPassword(auth, email, password);
                 // State update handled by onAuthStateChanged
             } else {
-                // Legacy / Fallback Mode
-                throw { code: 'auth/operation-not-allowed' };
+                console.warn("Attempting legacy login without password - this is deprecated.");
+                throw new Error("Password is required for login.");
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Login failed:", error);
-
-            // FALLBACK TO MOCK
-            if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                // Determine if we should allow "Mock" login.
-                // Only allow if it appears we are in a dev environment where Auth might be disabled.
-                // For now, specifically handle 'operation-not-allowed' as a valid fallback trigger.
-
-                if (error.code === 'auth/operation-not-allowed') {
-                    const fakeUid = 'mock_' + btoa(email);
-                    const userRef = doc(db, "users", fakeUid);
-                    const userSnap = await getDoc(userRef);
-
-                    if (userSnap.exists()) {
-                        setUser(userSnap.data() as User);
-                        localStorage.setItem('etao_last_user_id', fakeUid);
-                        setIsLoading(false);
-                        return; // Success via fallback
-                    } else {
-                        // If trying to login but user doesn't exist in mock DB, throw error
-                        throw new Error("User not found (Dev Mode). Please Sign Up first.");
-                    }
-                }
-            }
             throw error;
         } finally {
             setIsLoading(false);
         }
     };
-
-    // Auto-login for mock users
-    useEffect(() => {
-        const checkMockLogin = async () => {
-            const lastId = localStorage.getItem('etao_last_user_id');
-            if (lastId && !auth.currentUser) {
-                const userRef = doc(db, "users", lastId);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    setUser(userSnap.data() as User);
-                }
-            }
-        };
-        checkMockLogin();
-    }, []);
-
 
     const updateWallet = async (amount: number) => {
         if (!user) return;
