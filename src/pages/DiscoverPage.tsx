@@ -32,7 +32,16 @@ export default function DiscoverPage() {
     // Mock Library (unused for now)
     // const libraryTracks = tracks.slice(0, 3);
 
-    const GENRES = ["All", "Pop", "R&B", "Hip Hop", "Lo-Fi", "Ambient", "Electronic", "Jazz", "Classical", "Rock", "Indie", "Soul", "Reggae", "House", "Techno", "Meditation", "Healing"];
+    const GENRES = [
+        "All", "Pop", "R&B", "Hip Hop", "Lo-Fi",
+        "Ambient", "Electronic", "Jazz", "Classical",
+        "Rock", "Indie", "Soul", "Reggae",
+        "House", "Techno", "Meditation", "Healing",
+        "Drum & Bass", "Dubstep", "Trance", "Disco",
+        "Funk", "Blues", "Country", "Folk",
+        "Latin", "Metal", "Punk", "Gospel",
+        "Soundtrack", "World", "Trap", "Synthwave"
+    ];
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24">

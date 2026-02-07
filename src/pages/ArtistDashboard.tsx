@@ -666,7 +666,16 @@ export default function ArtistDashboard() {
                                         onChange={(e) => setUploadGenre(e.target.value)}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 bg-white"
                                     >
-                                        {["Pop", "R&B", "Hip Hop", "Lo-Fi", "Ambient", "Electronic", "Jazz", "Classical", "Rock", "Indie", "Soul", "Reggae", "House", "Techno", "Meditation", "Healing"].map(g => (
+                                        {[
+                                            "Pop", "R&B", "Hip Hop", "Lo-Fi",
+                                            "Ambient", "Electronic", "Jazz", "Classical",
+                                            "Rock", "Indie", "Soul", "Reggae",
+                                            "House", "Techno", "Meditation", "Healing",
+                                            "Drum & Bass", "Dubstep", "Trance", "Disco",
+                                            "Funk", "Blues", "Country", "Folk",
+                                            "Latin", "Metal", "Punk", "Gospel",
+                                            "Soundtrack", "World", "Trap", "Synthwave"
+                                        ].map(g => (
                                             <option key={g} value={g}>{g}</option>
                                         ))}
                                     </select>

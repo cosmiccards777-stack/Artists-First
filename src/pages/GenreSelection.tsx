@@ -8,7 +8,11 @@ const GENRES = [
     "Pop", "R&B", "Hip Hop", "Lo-Fi",
     "Ambient", "Electronic", "Jazz", "Classical",
     "Rock", "Indie", "Soul", "Reggae",
-    "House", "Techno", "Meditation"
+    "House", "Techno", "Meditation", "Healing",
+    "Drum & Bass", "Dubstep", "Trance", "Disco",
+    "Funk", "Blues", "Country", "Folk",
+    "Latin", "Metal", "Punk", "Gospel",
+    "Soundtrack", "World", "Trap", "Synthwave"
 ];
 
 export default function GenreSelection() {
