@@ -33,14 +33,14 @@ export default function AuthPage() {
                 if (email.toLowerCase() === 'cosmiccards777@gmail.com') {
                     navigate('/dashboard');
                 } else {
-                    navigate('/');
+                    navigate('/genre-selection');
                 }
 
             } else {
                 // Signup Flow (Mock)
                 if (!role || !email) return;
                 await login(email, role, artistName);
-                navigate(role === 'artist' ? '/dashboard' : '/');
+                navigate(role === 'artist' ? '/dashboard' : '/genre-selection');
             }
         } catch (error) {
             console.error("Login failed:", error);
@@ -53,7 +53,7 @@ export default function AuthPage() {
         setLoading(true);
         try {
             await loginWithGoogle();
-            navigate('/dashboard'); // Route based on user state ideally, but dashboard/home split is fine
+            navigate('/genre-selection');
         } catch (error) {
             console.error("Google Login failed:", error);
         } finally {

@@ -5,6 +5,8 @@ import ArtistProfile from './pages/ArtistProfile';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ArtistDashboard from './pages/ArtistDashboard';
+import GenreSelection from './pages/GenreSelection';
+import DiscoverPage from './pages/DiscoverPage';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -27,6 +29,8 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/etao" element={<ArtistProfile />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/genre-selection" element={<GenreSelection />} />
+              <Route path="/discover" element={<DiscoverPage />} />
               <Route
                 path="/dashboard"
                 element={

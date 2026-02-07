@@ -85,6 +85,7 @@ export default function ArtistDashboard() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [uploadLyrics, setUploadLyrics] = useState("");
+    const [uploadGenre, setUploadGenre] = useState("Pop");
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -134,6 +135,7 @@ export default function ArtistDashboard() {
         setAudioFile(null);
         setCoverFile(null);
         setUploadLyrics("");
+        setUploadGenre("Pop");
         setError(null);
         setIsUploadOpen(true);
     };
@@ -144,6 +146,7 @@ export default function ArtistDashboard() {
         setUploadTitle(track.title);
         setUploadPrice(track.price.toString());
         setUploadLyrics(track.lyrics || "");
+        setUploadGenre(track.genre || "Pop");
         setAudioFile(null); // Reset files, only update if user picks new ones
         setCoverFile(null);
         setError(null);
@@ -181,6 +184,7 @@ export default function ArtistDashboard() {
                 title: uploadTitle,
                 price: parseFloat(uploadPrice),
                 lyrics: uploadLyrics,
+                genre: uploadGenre,
             };
             if (audioUrl) updates.file = audioUrl;
             if (coverUrl) updates.cover = coverUrl;
@@ -194,7 +198,8 @@ export default function ArtistDashboard() {
                     price: parseFloat(uploadPrice),
                     cover: finalCoverUrl,
                     file: audioUrl,
-                    lyrics: uploadLyrics
+                    lyrics: uploadLyrics,
+                    genre: uploadGenre
                 });
             }
         }
@@ -652,6 +657,19 @@ export default function ArtistDashboard() {
                                         value={uploadPrice} onChange={e => setUploadPrice(e.target.value)}
                                         className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Genre</label>
+                                    <select
+                                        value={uploadGenre}
+                                        onChange={(e) => setUploadGenre(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 bg-white"
+                                    >
+                                        {["Pop", "R&B", "Hip Hop", "Lo-Fi", "Ambient", "Electronic", "Jazz", "Classical", "Rock", "Indie", "Soul", "Reggae", "House", "Techno", "Meditation", "Healing"].map(g => (
+                                            <option key={g} value={g}>{g}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>

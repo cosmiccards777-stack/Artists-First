@@ -11,6 +11,7 @@ interface User {
     role: UserRole;
     avatar?: string;
     walletBalance: number;
+    favoriteGenres: string[];
 }
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ interface AuthContextType {
     logout: () => void;
     isLoading: boolean;
     updateWallet: (amount: number) => void;
+    updateGenres: (genres: string[]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     name: firebaseUser.displayName || 'User',
                     role, // Dynamically set role
                     avatar: firebaseUser.photoURL || undefined,
-                    walletBalance: 5.00 // Default credit still applies for demo logic
+                    walletBalance: 5.00, // Default credit still applies for demo logic
+                    favoriteGenres: []
                 };
 
                 // Restore wallet from local storage if exists
@@ -57,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (storedUser) {
                     const parsed = JSON.parse(storedUser);
                     if (parsed.walletBalance) newUser.walletBalance = parsed.walletBalance;
+                    if (parsed.favoriteGenres) newUser.favoriteGenres = parsed.favoriteGenres;
                 }
 
                 setUser(newUser);
@@ -108,7 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name,
             role,
             avatar,
-            walletBalance: 5.00
+            walletBalance: 5.00,
+            favoriteGenres: []
         };
 
         setUser(newUser);
@@ -127,6 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
             localStorage.setItem(`etao_user_${user.email}`, JSON.stringify(updatedUser));
         }
+    }
+
+
+    const updateGenres = (genres: string[]) => {
+        if (!user) return;
+        const updatedUser = { ...user, favoriteGenres: genres };
+        setUser(updatedUser);
+
+        // Persist based on auth type
+        if (user.id.startsWith('mock-')) {
+            localStorage.setItem('etao_user', JSON.stringify(updatedUser));
+        } else {
+            localStorage.setItem(`etao_user_${user.email}`, JSON.stringify(updatedUser));
+        }
     };
 
     const logout = () => {
@@ -136,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, isLoading, updateWallet }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, loginWithGoogle, logout, isLoading, updateWallet, updateGenres }}>
             {children}
         </AuthContext.Provider>
     );
